@@ -8,7 +8,7 @@ I wrote this program because, after being astonished at Nushell's 30ms load time
 
 ## Installing
 
-Download `loader.nu` and place it somewhere (I recommend in `~/.config/nushell`. Then, at the end of your `config.nu`, load the file:
+Download `loader.nu` and place it somewhere (I recommend in `~/.config/nushell`). Then, at the end of your `config.nu`, load the file:
 
 ```nu
 # Run the aidnem loader, last so that things like carapace are pre-configured
@@ -17,7 +17,7 @@ source ~/.config/nushell/loader.nu
 
 Next, move all of your setup commands that generate files from `env.nu` and `config.nu` to `loader.nu` inside of the configs list.
 
-For example, these configs for starship, and zoxide:
+For example, these configs for starship and zoxide:
 
 ```nu
 # env.nu
@@ -40,4 +40,28 @@ let aidnem_loader_configs = [
 ]
 ```
 
-Note that this will result in files being saved to $nu.data-dir/vendor/autoload/{name}.nu rather than the original locations based on their install instructions. This might cause problems for some software, so bear it in mind when debugging.
+Note that this will result in files being saved to `$nu.data-dir/vendor/autoload/{name}.nu` rather than the original locations based on their install instructions. This might cause problems for some software, so bear it in mind when debugging.
+
+## Results
+
+How much did it speed up my startup times?
+
+Here's a benchmark where all files are deleted, then the startup is timed while generating the files:
+
+```
+➜ 1..10 | each {|_|
+  aidnem_loader_remove_file starship zoxide carapace
+  timeit { nu --config $nu.config-path --env-config $nu.env-path -c "exit" }
+} | math avg
+... (Lots of spammed output of deleting and re-adding files)
+397ms 214µs 880ns
+```
+
+Now here's the startup time with the cache:
+
+```
+➜ 1..10 | each { timeit { nu --config $nu.config-path --env-config $nu.env-path -c "exit" } } | math avg
+61ms 286µs 40ns
+```
+
+TLDR; 397ms -> 61ms. **84.6% reduction in startup time**.
